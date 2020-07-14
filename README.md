@@ -10,11 +10,14 @@ Springboot实现的http-flv、websocket-flv直播点播，支持rtsp、本地文
 * 播放器：西瓜播放器（字节跳动家的，不介绍了，抖音视频、西瓜视频都杠杠的，当然只要支持flv的播放器都可以）
 * 媒体框架：javacv（原本还写了个通过ffmpeg子进程推流，用socket服务接收的方案，等javacv版搞完善了再弄）
 
+#### 截图
+![Image text](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/image1.png)
+
+
 #### 安装教程
 
 1.  环境：java8+
 2.  标准的maven项目，sts、eclipse或者idea导入，直接运行main方法，或者直接命令打包运行
-3.  
 
 #### 使用说明
 
