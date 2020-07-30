@@ -23,6 +23,7 @@ import cn.hutool.core.thread.ThreadUtil;
 @Service
 public class MediaService {
 	
+	// 缓存线程
 	public static Map<String, ProcessThread> map = new HashMap<String, ProcessThread>();
 
 	/**

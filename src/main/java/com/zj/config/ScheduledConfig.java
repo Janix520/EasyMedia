@@ -6,6 +6,11 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+/**
+ * 定时任务与websocket线程池会冲突
+ * @author ZJ
+ *
+ */
 @Configuration
 @EnableScheduling
 public class ScheduledConfig {

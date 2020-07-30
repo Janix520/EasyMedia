@@ -88,7 +88,7 @@ public class ProcessThread extends Thread {
         // 关键帧间隔，一般与帧率相同或者是视频帧率的两倍
 //		recorder.setGopSize((int) (grabber.getFrameRate() * 2));
         
-        // 音频比特率
+        // 音频比特率（有时候抓流抓不到比特率，这里给他固定）
         recorder.setAudioBitrate(192000);
         // 声道
 		recorder.setAudioChannels(grabber.getAudioChannels());

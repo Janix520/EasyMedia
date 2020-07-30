@@ -10,6 +10,11 @@ import com.zj.service.MediaService;
 
 import cn.hutool.core.convert.Convert;
 
+/**
+ * websocket客户端推流控制器
+ * @author ZJ
+ *
+ */
 public class FlvHandler extends BinaryWebSocketHandler {
 	
 	@Autowired MediaService mediaService;

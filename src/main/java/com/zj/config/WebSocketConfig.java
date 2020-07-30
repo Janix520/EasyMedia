@@ -11,6 +11,11 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import com.zj.websocket.FlvHandler;
 import com.zj.websocket.WebSocketInterceptor;
 
+/**
+ * websocket配置
+ * @author ZJ
+ *
+ */
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer, WebMvcConfigurer {
