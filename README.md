@@ -1,3 +1,4 @@
+
 # EasyMedia
 
 #### 介绍
@@ -15,14 +16,14 @@ Springboot实现的http-flv、websocket-flv直播点播，支持rtsp、h264、h2
 
 
 #### 软件架构
-* 通过javacv推拉流存到内存里，直接输出到前端播放，现在只是一个播放实现，没有完善关闭回收，还不适用于生产环境。
-* 后端：springboot，集成websocket
-* 前端：html5
+* 通过javacv推拉流存到内存里，直接输出到前端播放
+* 后端：springboot、netty，集成websocket
+* 前端：html5（后面更新管理页面）
 * 播放器：西瓜播放器 http://h5player.bytedance.com/ （字节跳动家的，不介绍了，抖音视频、西瓜视频都杠杠的，当然只要支持flv的播放器都可以）
 * 媒体框架：javacv
 
 #### 截图
-![Image text](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/image1.png)
+![Image text](https://img-blog.csdnimg.cn/img_convert/e8944fb7e61fbead2e773edfd6beeaf6.png)
 
 
 #### 安装教程
@@ -34,12 +35,12 @@ Springboot实现的http-flv、websocket-flv直播点播，支持rtsp、h264、h2
 
 1.  运行后访问：http://localhost:8888/  #自行修改rtsp地址
 2.  流媒体端口为 8866，8888是web端口（后面需要做管理页面）
-3.  您只需要将您的rtsp替换下面的
-    http://localhost:8866/live?url={rtsp}
-    ws://localhost:8866/live?url={rtsp}
-    例如：
-    http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
-    ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
+3.  您只需要将您的rtsp替换下面的 <br/>
+    http://localhost:8866/live?url={rtsp} <br/>
+    ws://localhost:8866/live?url={rtsp} <br/>
+    例如：<br/>
+    http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102 <br/>
+    ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102 <br/>
 
 
 #### 为什么要写个这个
@@ -50,3 +51,4 @@ Springboot实现的http-flv、websocket-flv直播点播，支持rtsp、h264、h2
 * 原本还写了个通过ffmpeg子进程推流，然后用socket服务接收的方案，等javacv版搞完善了再弄。
 * 由于m3u8是兼容性最强，水果、安卓和PC通吃，所以后续会加入m3u8切片方式
 * 完善web端，方便管理点播文件和播放列表等
+
