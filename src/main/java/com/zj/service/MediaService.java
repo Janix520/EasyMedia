@@ -1,170 +1,65 @@
 package com.zj.service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletResponse;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.socket.BinaryMessage;
-import org.springframework.web.socket.WebSocketSession;
 
-import com.zj.thread.ProcessThread;
+import com.zj.entity.Camera;
+import com.zj.thread.MediaConvert;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.crypto.digest.MD5;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
  * 媒体服务
+ * 
  * @author ZJ
  *
  */
 @Service
 public class MediaService {
-	
-	// 缓存线程
-	public static Map<String, ProcessThread> map = new HashMap<String, ProcessThread>();
+
+	// 缓存流转换线程
+	public static ConcurrentHashMap<String, MediaConvert> cameras = new ConcurrentHashMap<>();
 
 	/**
 	 * 
 	 * @param url 源地址
 	 * @param id  源地址唯一标识（表示同一个媒体）
 	 */
-	public void playForHttp(String input, String id, HttpServletResponse response) {
-		
-		ProcessThread processThread = map.get(id);
-		//新增的媒体需要进行推流初始化
-		if (processThread == null) {
-			processThread = new ProcessThread(input);
-			//初始化推拉流
-			map.put(id, processThread);
-			ThreadUtil.execute(processThread);
-		} 
-		
-		//创建客户端的输出流
-		ByteArrayOutputStream byteArrayOutputStream = processThread.addClient();
-		
-		//发送头部
-		sendHeaderForHttp(response, processThread);
-		
-		//发送数据
-		sendAVDataForHttp(response, byteArrayOutputStream);
-	}
-	
-	public void playForWs(String input, String id, WebSocketSession session) {
-		ProcessThread processThread = map.get(id);
-		//新增的媒体需要进行推流初始化
-		if (processThread == null) {
-			processThread = new ProcessThread(input);
-			//初始化推拉流
-			map.put(id, processThread);
-			ThreadUtil.execute(processThread);
-		} 
-		
-		//创建客户端的输出流
-		ByteArrayOutputStream byteArrayOutputStream = processThread.addClient();
-		
-		//发送头部
-		sendHeaderForWs(session, processThread);
-		
-		//发送数据
-		sendAVDataForWs(session, byteArrayOutputStream);
-	}
-	
-	/**
-	 * 发送FLV header
-	 * @param response
-	 * @param stream
-	 */
-	private void sendHeaderForHttp(HttpServletResponse response, ProcessThread processThread) {
-		try {
-			//最多等三分钟，如果没有header则认为没取到视频，发送header后续要优化
-			for (int i = 0; i < 1200; i++) {
-				if (processThread.getHeader() != null) {
-					response.getOutputStream().write(processThread.getHeader());
-					break;
-				}
-				Thread.sleep(100);
-			}
-			
-			/*
-			 * 这里后续还要修改，如果没获取到header怎么和前段交互，后端线程怎么处理
-			 */
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-		}
-		
-	}
-	
-	/**
-	 * 发送视频数据
-	 * @param response
-	 * @param outData
-	 */
-	private void sendAVDataForHttp(HttpServletResponse response, ByteArrayOutputStream outData) {
-		try {
-			while (true) {
-				if (outData.size() > 0) {
-					response.getOutputStream().write(outData.toByteArray());
-					outData.reset();
-				} else {
-					Thread.sleep(100);
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
+	public void playForHttp(Camera camera, ChannelHandlerContext ctx) {
+
+		// 区分不媒体
+		String mediaKey = MD5.create().digestHex(camera.getUrl());
+
+		if (cameras.containsKey(mediaKey)) {
+			MediaConvert mediaConvert = cameras.get(mediaKey);
+			cameras.put(mediaKey, mediaConvert);
+			mediaConvert.addHttpClient(ctx);
+		} else {
+			MediaConvert mediaConvert = new MediaConvert(camera);
+			cameras.put(mediaKey, mediaConvert);
+			ThreadUtil.execute(mediaConvert);
+			mediaConvert.addHttpClient(ctx);
 		}
 	}
-	
-	/**
-	 * 发送FLV header
-	 * @param response
-	 * @param stream
-	 */
-	private void sendHeaderForWs(WebSocketSession session, ProcessThread processThread) {
-		try {
-			//最多等三分钟，如果没有header则认为没取到视频，发送header后续要优化
-			for (int i = 0; i < 1200; i++) {
-				if (processThread.getHeader() != null) {
-					session.sendMessage(new BinaryMessage(processThread.getHeader()));
-					break;
-				}
-				Thread.sleep(100);
-			}
-			
-			/*
-			 * 这里后续还要修改，如果没获取到header怎么和前段交互，后端线程怎么处理
-			 */
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-		}
-		
-	}
-	
-	/**
-	 * 发送视频数据
-	 * @param response
-	 * @param outData
-	 */
-	private void sendAVDataForWs(WebSocketSession session, ByteArrayOutputStream outData) {
-		try {
-			while (true) {
-				if (outData.size() > 0) {
-					session.sendMessage(new BinaryMessage(outData.toByteArray()));
-					outData.reset();
-				} else {
-					Thread.sleep(100);
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
+
+	public void playForWs(Camera camera, ChannelHandlerContext ctx) {
+
+		// 区分不媒体
+		String mediaKey = MD5.create().digestHex(camera.getUrl());
+
+		if (cameras.containsKey(mediaKey)) {
+			MediaConvert mediaConvert = cameras.get(mediaKey);
+			cameras.put(mediaKey, mediaConvert);
+			mediaConvert.addWsClient(ctx);
+		} else {
+			MediaConvert mediaConvert = new MediaConvert(camera);
+			cameras.put(mediaKey, mediaConvert);
+			ThreadUtil.execute(mediaConvert);
+			mediaConvert.addWsClient(ctx);
 		}
 	}
+
 }

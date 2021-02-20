@@ -15,8 +15,8 @@
 	</div>
 	
 	<div class="flex justify-center" style="margin-top: 15px;">
-		<div class="flex-sub text-black text-bold flex justify-center">http://localhost:8888/test?url=video/file.mp4&id=1</div>
-		<div class="flex-sub text-black text-bold flex justify-center">ws://localhost:8888/flv?url=video/file.mp4&id=2</div>
+		<div class="flex-sub text-black text-bold flex justify-center">http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102</div>
+		<div class="flex-sub text-black text-bold flex justify-center">ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102</div>
 	</div>
 	
 	<div class="flex justify-center" style="margin-top: 30px;">
@@ -32,15 +32,14 @@
 <script>
 	let player1 = new FlvJsPlayer({
 		"id" : "httpVideo",
-		"url" : "http://localhost:8888/test?url=video/file.mp4&id=1",
-		//"url" : "http://localhost:8888/test?url=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov&id=1",
+		"url" : "http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102",
 		"playsinline" : true,
 		"whitelist" : [ "" ]
 	});
 	
 	let player2 = new FlvJsPlayer({
 		"id" : "wsVidoe",
-		"url" : "ws://localhost:8888/flv?url=video/file.mp4&id=2",
+		"url" : "ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102",
 		"playsinline" : true,
 		"whitelist" : [ "" ]
 	});
