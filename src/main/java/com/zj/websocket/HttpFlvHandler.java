@@ -31,8 +31,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
-// http://172.16.64.92:1984/live/liveflv?deviceid=123abcdef32153421
-// http://106.15.184.203:1984/live/liveflv?deviceid=123abcdef32153421
+// http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
+// ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
 @Slf4j
 public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
 
