@@ -48,6 +48,7 @@ Springboot实现的http-flv、websocket-flv直播点播，支持rtsp、h264、h2
 
 
 #### 后续计划
+* 后续会先完善服务端rtsp重连机制
 * 原本还写了个通过ffmpeg子进程推流，然后用socket服务接收的方案，等javacv版搞完善了再弄。
 * 由于m3u8是兼容性最强，水果、安卓和PC通吃，所以后续会加入m3u8切片方式
 * 完善web端，方便管理点播文件和播放列表等
