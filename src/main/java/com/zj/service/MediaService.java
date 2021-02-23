@@ -26,11 +26,10 @@ public class MediaService {
 	/**
 	 * 
 	 * @param url 源地址
-	 * @param id  源地址唯一标识（表示同一个媒体）
 	 */
 	public void playForHttp(Camera camera, ChannelHandlerContext ctx) {
 
-		// 区分不媒体
+		// 区分不同媒体
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
 
 		if (cameras.containsKey(mediaKey)) {
@@ -47,7 +46,7 @@ public class MediaService {
 
 	public void playForWs(Camera camera, ChannelHandlerContext ctx) {
 
-		// 区分不媒体
+		// 区分不同媒体
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
 
 		if (cameras.containsKey(mediaKey)) {
