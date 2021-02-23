@@ -36,7 +36,7 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 - 您只需要将{rtsp}替换成您的，然后放播放器里就能看了
 
 
-    http://localhost:8866/live?url={rtsp}
+    http://localhost:8866/live?url={rtsp}<br />
     ws://localhost:8866/live?url={rtsp}
 
 
