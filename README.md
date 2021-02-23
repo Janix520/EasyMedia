@@ -34,12 +34,22 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 
 - 流媒体服务会绑定两个端口，分别为 8866（媒体端口）、8888（web端口，后续会做简单的管理页面）
 - 您只需要将{rtsp}替换成您的，然后放播放器里就能看了
+
+
     http://localhost:8866/live?url={rtsp}
     ws://localhost:8866/live?url={rtsp}
+	
+	
  例如：
-     http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
+ 
+ 
+    http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
     ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
+	
+	
 - 成品运行方式（由于是跨平台的，未做ffmpeg精简，所以包会比较大）
+
+
     java -jar EasyMedia-0.0.1-SNAPSHOT.jar
 
 #### 为什么要写个这个
