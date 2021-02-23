@@ -37,6 +37,7 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 
 	`http://localhost:8866/live?url={rtsp}` 
 	`ws://localhost:8866/live?url={rtsp}`
+
  例如：
  
 	`http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102`
