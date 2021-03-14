@@ -18,6 +18,12 @@ public class Camera implements Serializable {
 	 */
 	private static final long serialVersionUID = -5575352151805386129L;
 	
-//	private String id;
+	private String id;
+	/**
+	 * rtsp、rtmp、d:/flv/test.mp4
+	 */
 	private String url;
+	private String remark;
+	
+	private boolean status;
 }

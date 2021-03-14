@@ -1,8 +1,9 @@
-package com.zj.websocket;
+package com.zj.server;
 
 import java.util.List;
 
 import com.zj.entity.Camera;
+import com.zj.service.CameraRepository;
 import com.zj.service.MediaService;
 
 import cn.hutool.core.util.StrUtil;
@@ -34,14 +35,16 @@ import lombok.extern.slf4j.Slf4j;
 // http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
 // ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
 @Slf4j
-public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
+public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 
 	private MediaService mediaService;
 	private WebSocketServerHandshaker handshaker;
+	private CameraRepository cameraRepository;
 
-	public HttpFlvHandler(MediaService mediaService) {
+	public FlvHandler(MediaService mediaService, CameraRepository cameraRepository) {
 		super();
 		this.mediaService = mediaService;
+		this.cameraRepository = cameraRepository;
 	}
 
 	@Override
@@ -59,25 +62,35 @@ public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
 				return;
 			}
 
-			List<String> list = decoder.parameters().get("url");
+			List<String> urlList = decoder.parameters().get("url");
+			List<String> acList = decoder.parameters().get("autoClose");
 
-			if (!list.isEmpty() && StrUtil.isBlank(list.get(0))) {
+			if (null != urlList && StrUtil.isBlank(urlList.get(0))) {
 				log.info("url有误");
 				sendError(ctx, HttpResponseStatus.BAD_REQUEST);
 				return;
 			}
 
 			Camera camera = new Camera();
-			camera.setUrl(list.get(0));
+			camera.setUrl(urlList.get(0));
+
+			//是否需要自动关闭流
+			boolean autoClose = true;
+			if (null != acList) {
+				if ("false".equals(acList.get(0))) {
+					autoClose = false;
+					cameraRepository.add(camera);
+				}
+			}
 
 			if (!req.decoderResult().isSuccess() || (!"websocket".equals(req.headers().get("Upgrade")))) {
 				// http请求
 				sendFlvReqHeader(ctx);
-				mediaService.playForHttp(camera, ctx);
-				
+				mediaService.playForHttp(camera, ctx, autoClose);
+
 			} else {
 				// websocket握手，请求升级
-				
+
 				// 参数分别是ws地址，子协议，是否扩展，最大frame长度
 				WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(
 						getWebSocketLocation(req), null, true, 5 * 1024 * 1024);
@@ -86,7 +99,7 @@ public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
 					WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
 				} else {
 					handshaker.handshake(ctx.channel(), req);
-					mediaService.playForWs(camera, ctx);
+					mediaService.playForWs(camera, ctx, autoClose);
 				}
 			}
 
@@ -115,6 +128,7 @@ public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
 
 	/**
 	 * 发送req header，告知浏览器是flv格式
+	 * 
 	 * @param ctx
 	 */
 	private void sendFlvReqHeader(ChannelHandlerContext ctx) {
@@ -129,6 +143,7 @@ public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
 
 	/**
 	 * 错误请求响应
+	 * 
 	 * @param ctx
 	 * @param status
 	 */
@@ -142,31 +157,31 @@ public class HttpFlvHandler extends SimpleChannelInboundHandler<Object> {
 
 	/**
 	 * websocket处理
+	 * 
 	 * @param ctx
 	 * @param frame
 	 */
 	private void handleWebSocketRequest(ChannelHandlerContext ctx, WebSocketFrame frame) {
-        //关闭
-        if (frame instanceof CloseWebSocketFrame) {
-            handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
-            return;
-        }
+		// 关闭
+		if (frame instanceof CloseWebSocketFrame) {
+			handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
+			return;
+		}
 
-        //握手PING/PONG
-        if (frame instanceof PingWebSocketFrame) {
-            ctx.write(new PongWebSocketFrame(frame.content().retain()));
-            return;
-        }
+		// 握手PING/PONG
+		if (frame instanceof PingWebSocketFrame) {
+			ctx.write(new PongWebSocketFrame(frame.content().retain()));
+			return;
+		}
 
-        //文本
-        if (frame instanceof TextWebSocketFrame) {
-            return;
-        }
+		// 文本
+		if (frame instanceof TextWebSocketFrame) {
+			return;
+		}
 
-        if (frame instanceof BinaryWebSocketFrame) {
-            return;
-        }
-    }
-	
+		if (frame instanceof BinaryWebSocketFrame) {
+			return;
+		}
+	}
 
 }

@@ -1,10 +1,11 @@
-package com.zj.websocket;
+package com.zj.server;
 
 import java.net.InetSocketAddress;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.zj.service.CameraRepository;
 import com.zj.service.MediaService;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -38,6 +39,8 @@ public class MediaServer {
 
 	@Autowired
 	private MediaService mediaService;
+	@Autowired
+	private CameraRepository cameraRepository;
 
     public void start(InetSocketAddress socketAddress) {
         //new 一个主线程组
@@ -58,7 +61,7 @@ public class MediaServer {
                                 .addLast(new ChunkedWriteHandler())
                                 .addLast(new HttpObjectAggregator(64 * 1024))
                                 .addLast(new CorsHandler(corsConfig))
-                                .addLast(new HttpFlvHandler(mediaService));
+                                .addLast(new FlvHandler(mediaService, cameraRepository));
                     }
                 })
                 .localAddress(socketAddress)
