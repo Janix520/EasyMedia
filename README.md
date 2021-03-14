@@ -38,8 +38,9 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 - 媒体框架：javacv、ffmpeg
 
 #### 截图
-![Image text](https://img-blog.csdnimg.cn/img_convert/e8944fb7e61fbead2e773edfd6beeaf6.png)
-
+![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/1.png)
+![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/2.png)
+![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/3.png)
 
 #### 源码教程
 
@@ -50,14 +51,14 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 
 ##### 新功能介绍
 有两种方式播放：
-一种直接链接播放，每次第一个用户打开会创建推流，没人看时十几秒后会自动断开流。
-另一种是使用restfu api或者页面新增流，在服务同级目录会生成一个camera.json。
-区别在于api推流没有客户端看时不会自动断开，重启服务发现camera.json会自动推流，可以在浏览器直接秒开。
-
-当然也可以通过 autoClose=false 参数，例如
+- 一种直接链接播放，每次第一个用户打开会创建推流，没人看时十几秒后会自动断开流。
+- 另一种是使用restfu api或者页面新增流，在服务同级目录会生成一个camera.json。
+区别在于api推流没有客户端看时不会自动断开，重启服务发现camera.json会自动推流，可以在浏览器直接秒开。（当前你也可以直接修改camera.json）
+- 当然也可以通过 autoClose=false 参数，例如
 ```
 http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&autoClose=false
 ```
+通过这种方式也会加入到camera.json
 
 ##### 媒体服务功能
 - 流媒体服务会绑定两个端口，分别为 8866（媒体端口）、8888（web端口，后续会做简单的管理页面）
