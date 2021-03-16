@@ -57,6 +57,7 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 - 当然也可以通过 autoClose=false 参数，例如
 ```
 http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&autoClose=false
+ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&autoClose=false
 ```
 通过这种方式也会加入到camera.json
 
