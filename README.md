@@ -6,8 +6,17 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 
 
 #### 成品下载
-链接：https://pan.baidu.com/s/1ZIjZXXKx6-6X0SEvju5e_w
-提取码：b9pf
+此版本已修复大华等rtsp后面带参数的地址解析
+链接：https://pan.baidu.com/s/1JVvw2N0RkDWC0uDU11wFxw 
+提取码：cdym 
+复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
+
+另外有一个ffmpeg体验版，有些地址播放不了的你可以试试这款，基本都支持，再无绿色杠杠啥的了。
+千万注意，此版本只是体验版并没完善，未添加重连机制。
+链接：https://pan.baidu.com/s/1SxCgPH479W-h7Dy-DvD4UA 
+提取码：d5ai 
+复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
+
 
 
 [前端源码传送门](https://download.csdn.net/download/Janix520/15785632 "前端源码传送门")
@@ -86,6 +95,10 @@ java -jar -Dserver.port=页面端口 -Dmediaserver.port=媒体端口 EasyMedia-0
 
 1.  环境：java8+
 2.  标准的maven项目，sts、eclipse或者idea导入，直接运行main方法
+
+
+#### 更新说明 2021-05-18
+- 解决大华等带有参数的地址解析问题
 
 
 #### 更新说明 2021-03-14
