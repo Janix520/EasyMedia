@@ -1,6 +1,8 @@
 package com.zj.server;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.zj.entity.Camera;
 import com.zj.service.CameraRepository;
@@ -61,23 +63,24 @@ public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 				sendError(ctx, HttpResponseStatus.BAD_REQUEST);
 				return;
 			}
+			
+			Map<String, String> parse = parseUrl(req.uri());
 
-			List<String> urlList = decoder.parameters().get("url");
-			List<String> acList = decoder.parameters().get("autoClose");
-
-			if (null != urlList && StrUtil.isBlank(urlList.get(0))) {
+			String streamUrl = parse.get("url");
+			String autoCloseStr = parse.get("autoClose");
+			if (StrUtil.isBlank(streamUrl)) {
 				log.info("url有误");
 				sendError(ctx, HttpResponseStatus.BAD_REQUEST);
 				return;
 			}
 
 			Camera camera = new Camera();
-			camera.setUrl(urlList.get(0));
+			camera.setUrl(streamUrl);
 
 			//是否需要自动关闭流
 			boolean autoClose = true;
-			if (null != acList) {
-				if ("false".equals(acList.get(0))) {
+			if (StrUtil.isNotBlank(autoCloseStr)) {
+				if ("false".equals(autoCloseStr)) {
 					autoClose = false;
 					cameraRepository.add(camera);
 				}
@@ -182,6 +185,44 @@ public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 		if (frame instanceof BinaryWebSocketFrame) {
 			return;
 		}
+	}
+	
+	private Map<String, String> parseUrl(String url) {
+		String[] split = url.split("url=");
+		String urlParent = split[1];
+		Map<String, String> pMap = new HashMap<String, String>();
+		//有autoClose
+		if(urlParent.indexOf("autoClose") != -1) {
+			
+			String[] urlChild = urlParent.split("\\?");
+			if(urlChild.length > 1) {
+				String rUrl = urlChild[0];
+				String fullParam = urlChild[1];
+				
+				String[] params = fullParam.split("&");
+				
+				StringBuffer sb = new StringBuffer();
+				sb.append(rUrl);
+				sb.append("?");
+				
+				for (String param : params) {
+					if(param.indexOf("autoClose") == -1) {
+						sb.append(param);
+						sb.append("&");
+					} else {
+						String[] as = param.split("=");
+						pMap.put(as[0], as[1]);		
+					}
+				}
+				int lastIndexOf = sb.toString().lastIndexOf("&");
+				String xxx = sb.toString().substring(0, lastIndexOf);
+				pMap.put("url", xxx);
+			}
+			
+		} else {
+			pMap.put("url", urlParent);
+		}
+		return pMap;
 	}
 
 }
