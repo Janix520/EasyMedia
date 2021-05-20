@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.zj.entity.Camera;
 import com.zj.thread.MediaConvert;
+import com.zj.thread.MediaRecodeOrTransfer;
 
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.crypto.digest.MD5;
@@ -21,7 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 public class MediaService {
 
 	// 缓存流转换线程
-	public static ConcurrentHashMap<String, MediaConvert> cameras = new ConcurrentHashMap<>();
+	public static ConcurrentHashMap<String, MediaRecodeOrTransfer> cameras = new ConcurrentHashMap<>();
 
 	/**
 	 * 
@@ -33,11 +34,11 @@ public class MediaService {
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
 
 		if (cameras.containsKey(mediaKey)) {
-			MediaConvert mediaConvert = cameras.get(mediaKey);
+			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
 			cameras.put(mediaKey, mediaConvert);
 			mediaConvert.addHttpClient(ctx);
 		} else {
-			MediaConvert mediaConvert = new MediaConvert(camera, autoClose);
+			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, autoClose);
 			cameras.put(mediaKey, mediaConvert);
 			ThreadUtil.execute(mediaConvert);
 			mediaConvert.addHttpClient(ctx);
@@ -50,11 +51,11 @@ public class MediaService {
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
 
 		if (cameras.containsKey(mediaKey)) {
-			MediaConvert mediaConvert = cameras.get(mediaKey);
+			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
 			cameras.put(mediaKey, mediaConvert);
 			mediaConvert.addWsClient(ctx);
 		} else {
-			MediaConvert mediaConvert = new MediaConvert(camera, autoClose);
+			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, autoClose);
 			cameras.put(mediaKey, mediaConvert);
 			ThreadUtil.execute(mediaConvert);
 			mediaConvert.addWsClient(ctx);
@@ -71,7 +72,7 @@ public class MediaService {
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
 
 		if (!cameras.containsKey(mediaKey)) {
-			MediaConvert mediaConvert = new MediaConvert(camera, false);
+			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, false);
 			cameras.put(mediaKey, mediaConvert);
 			ThreadUtil.execute(mediaConvert);
 		}
@@ -87,7 +88,7 @@ public class MediaService {
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
 
 		if (cameras.containsKey(mediaKey)) {
-			MediaConvert mediaConvert = cameras.get(mediaKey);
+			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
 			mediaConvert.setRuning(false);
 			cameras.remove(mediaKey);
 		}

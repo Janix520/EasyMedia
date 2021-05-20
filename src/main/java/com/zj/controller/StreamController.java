@@ -11,6 +11,7 @@ import com.zj.entity.Camera;
 import com.zj.service.CameraRepository;
 import com.zj.service.MediaService;
 import com.zj.thread.MediaConvert;
+import com.zj.thread.MediaRecodeOrTransfer;
 import com.zj.vo.Result;
 
 import cn.hutool.crypto.digest.MD5;
@@ -61,7 +62,8 @@ public class StreamController {
 		Collection<Camera> values = CameraRepository.cameraMap.values();
 		for (Camera camera : values) {
 			String digestHex = MD5.create().digestHex(camera.getUrl());
-			MediaConvert mediaConvert = MediaService.cameras.get(digestHex);
+			MediaRecodeOrTransfer mediaConvert = MediaService.cameras.get(digestHex);
+//			MediaConvert mediaConvert = MediaService.cameras.get(digestHex);
 			if(mediaConvert != null) {
 				camera.setStatus(mediaConvert.isRuning());
 			} else {
