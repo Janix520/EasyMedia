@@ -195,13 +195,31 @@ public class MediaRecodeOrTransfer extends Thread {
 	private boolean supportFlvFormatCodec() {
 		int vcodec=grabber.getVideoCodec();
 		int acodec=grabber.getAudioCodec();
-		return (avcodec.AV_CODEC_ID_H264==vcodec||avcodec.AV_CODEC_ID_H263==vcodec)&&(avcodec.AV_CODEC_ID_AAC==acodec||avcodec.AV_CODEC_ID_AAC_LATM==acodec);
+		return (camera.getType() == 0) && (avcodec.AV_CODEC_ID_H264==vcodec||avcodec.AV_CODEC_ID_H263==vcodec)&&(avcodec.AV_CODEC_ID_AAC==acodec||avcodec.AV_CODEC_ID_AAC_LATM==acodec);
+	}
+	
+	/**
+	 * 是否是本地文件
+	 * @return 
+	 */
+	private boolean isLocalFile(String streamUrl) {
+		String[] split = streamUrl.trim().split("\\:");
+		if(split.length > 0) {
+			if(split[0].length() <= 1) {
+				return true;
+			} 
+		}
+		return false;
 	}
 	
 	/**
 	 * 将视频源转换为flv
 	 */
 	protected void transferStream2Flv() {
+		if(isLocalFile(camera.getUrl())) {
+			camera.setType(1);
+		}
+		
 		if(!createGrabber()) {
 			return;
 		}

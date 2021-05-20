@@ -2,17 +2,17 @@
 # EasyMedia
 
 #### 介绍
-Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于直播点播），支持rtsp、h264、h265等、rtmp等多种源，h5纯js播放（不依赖flash），不需要依赖nginx等第三方，由于全部经过转码，延迟大部分在3-5秒左右（如果转封装可以在2-3秒左右，需自行修改）。
+Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于直播点播），支持rtsp、h264、h265等、rtmp等多种源，h5纯js播放（不依赖flash），不需要依赖nginx等第三方，延迟大部分在1-5秒内（已经支持转复用，h264的流自动转封装，超低延迟。PS:当然还有种更低延迟的不用flv方案没时间写了，但是主要是flv比较大众，这个一般也够用了）。
 
 
 #### 成品下载
-!!!此版本已修复大华等rtsp后面带参数的地址解析
-链接：https://pan.baidu.com/s/1JVvw2N0RkDWC0uDU11wFxw 
-提取码：cdym 
+!!!此版本已修复大华等rtsp后面带参数的地址解析、并支持转复用或转码
+链接：https://pan.baidu.com/s/10-Piwf1WsypvCgsvx2ucmA 
+提取码：xe1w 
 复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
 
 !!!另外有一个ffmpeg体验版，有些地址播放不了的你可以试试这款，基本都支持，再无绿色杠杠啥的了。
-千万注意，此版本只是体验版并没完善，未添加重连机制。
+千万注意，此版本只是体验版并没完善。
 链接：https://pan.baidu.com/s/1SxCgPH479W-h7Dy-DvD4UA 
 提取码：d5ai 
 复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
@@ -98,6 +98,10 @@ java -jar -Dserver.port=页面端口 -Dmediaserver.port=媒体端口 EasyMedia-0
 
 
 #### 更新说明 2021-05-18
+- 支持转复用或转码，h264的流支持自动转封装，超低延迟
+
+
+#### 更新说明 2021-05-18
 - 解决大华等带有参数的地址解析问题
 
 
@@ -118,7 +122,7 @@ java -jar -Dserver.port=页面端口 -Dmediaserver.port=媒体端口 EasyMedia-0
 - 由于替换netty，考虑到视频文件需要上传到服务器，所以暂时移除本地文件支持。
 
 
-#### 网上找的测试地址 安徽卫视，建议用自己内网的，公开的可能速度就比较慢 
+#### 网上找的测试地址 安徽卫视，建议用自己内网的，公开的可能速度就比较慢 （有时候会失效，尽量用自己的）
 `rtmp://58.200.131.2:1935/livetv/ahtv`
 
 

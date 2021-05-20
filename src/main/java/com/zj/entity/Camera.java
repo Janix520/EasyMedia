@@ -26,4 +26,7 @@ public class Camera implements Serializable {
 	private String remark;
 	
 	private boolean status;
+	
+	//0网络流，1本地视频
+	private int type = 0;
 }
