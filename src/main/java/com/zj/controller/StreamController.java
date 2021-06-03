@@ -65,7 +65,7 @@ public class StreamController {
 			MediaRecodeOrTransfer mediaConvert = MediaService.cameras.get(digestHex);
 //			MediaConvert mediaConvert = MediaService.cameras.get(digestHex);
 			if(mediaConvert != null) {
-				camera.setStatus(mediaConvert.isRuning());
+				camera.setStatus(mediaConvert.isRunning());
 			} else {
 				camera.setStatus(false);
 			}
