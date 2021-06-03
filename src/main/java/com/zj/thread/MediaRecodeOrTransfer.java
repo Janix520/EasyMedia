@@ -17,7 +17,6 @@ import org.bytedeco.javacv.FrameGrabber.Exception;
 import com.zj.entity.Camera;
 import com.zj.service.MediaService;
 
-import cn.hutool.crypto.digest.MD5;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -73,10 +72,13 @@ public class MediaRecodeOrTransfer extends Thread {
 	 */
 	private long noClientsDuration = 60000;
 
+	/**
+	 * 当前在线人数
+	 */
 	private int hcSize, wcSize = 0;
 
 	/**
-	 * 没有客户端计数
+	 * 用于没有客户端时候的计时
 	 */
 	private int noClient = 0;
 
@@ -185,6 +187,7 @@ public class MediaRecodeOrTransfer extends Thread {
 			log.info("\r\n{}\r\n启动拉流器成功",camera.getUrl());
 			return grabberStatus = true;
 		} catch (Exception e) {
+			MediaService.cameras.remove(camera.getMediaKey());
 			log.error("\r\n{}\r\n启动拉流器失败，网络超时或视频源不可用", camera.getUrl());
 			e.printStackTrace();
 		}
@@ -223,6 +226,7 @@ public class MediaRecodeOrTransfer extends Thread {
 				return recorderStatus=true;
 			} catch (org.bytedeco.javacv.FrameRecorder.Exception e1) {
 				log.info("启动转码录制器失败", e1);
+				MediaService.cameras.remove(camera.getMediaKey());
 				e1.printStackTrace();
 			}
 		}else {
@@ -523,13 +527,12 @@ public class MediaRecodeOrTransfer extends Thread {
 		}
 		if (httpClients.isEmpty() && wsClients.isEmpty()) {
 			// 等待20秒还没有客户端，则关闭推流
-			if (noClient > 20) {
+			if (noClient > noClientsDuration) {
 				running = false;
-				String mediaKey = MD5.create().digestHex(camera.getUrl());
-				MediaService.cameras.remove(mediaKey);
+				MediaService.cameras.remove(camera.getMediaKey());
 			} else {
-				noClient += 1;
-//				log.info("\r\n{}\r\n {} 秒自动关闭推拉流 \r\n", camera.getUrl(), 11-noClient);
+				noClient += 1000;
+//				log.info("\r\n{}\r\n {} 秒自动关闭推拉流 \r\n", camera.getUrl(), noClientsDuration-noClient);
 			}
 		} else {
 			noClient = 0;

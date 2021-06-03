@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.zj.entity.Camera;
-import com.zj.thread.MediaConvert;
 import com.zj.thread.MediaRecodeOrTransfer;
 
 import cn.hutool.core.thread.ThreadUtil;
@@ -29,25 +28,26 @@ public class MediaService {
 	/**
 	 * 网络超时
 	 */
-	@Value("${mediaserver.netTimeout}")
-	private String netTimeout = "15000000";
+	@Value("${mediaserver.netTimeout:15000000}")
+	private String netTimeout;
 	/**
 	 * 读写超时
 	 */
-	@Value("${mediaserver.readOrWriteTimeout}")
-	private String readOrWriteTimeout = "15000000";
+	@Value("${mediaserver.readOrWriteTimeout:15000000}")
+	private String readOrWriteTimeout;
 
 	/**
 	 * 无人拉流观看是否自动关闭流
 	 */
-	@Value("${mediaserver.autoClose}")
-	private boolean autoClose=true;
+	@Value("${mediaserver.autoClose:true}")
+	private boolean autoClose;
 
 	/**
 	 * 无人拉流观看持续多久自动关闭，1分钟
 	 */
-	@Value("${mediaserver.autoClose.noClientsDuration}")
-	private long noClientsDuration=60000;
+	@Value("${mediaserver.autoClose.noClientsDuration:60000}")
+	private long noClientsDuration;
+	
 	/**
 	 *http-flv播放
 	 * @param camera
@@ -58,6 +58,7 @@ public class MediaService {
 
 		// 区分不同媒体
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(mediaKey);
 
 		if (cameras.containsKey(mediaKey)) {
 			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
@@ -75,6 +76,7 @@ public class MediaService {
 
 		// 区分不同媒体
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(mediaKey);
 
 		if (cameras.containsKey(mediaKey)) {
 			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
@@ -96,6 +98,7 @@ public class MediaService {
 
 		// 区分不同媒体
 		String mediaKey = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(mediaKey);
 
 		if (!cameras.containsKey(mediaKey)) {
 			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, autoClose,noClientsDuration,netTimeout,readOrWriteTimeout);
