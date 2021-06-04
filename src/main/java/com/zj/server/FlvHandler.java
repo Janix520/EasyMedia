@@ -1,16 +1,18 @@
 package com.zj.server;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import com.zj.entity.Camera;
-import com.zj.service.CameraRepository;
+import com.zj.dto.Camera;
 import com.zj.service.MediaService;
 
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.MD5;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -37,17 +39,37 @@ import lombok.extern.slf4j.Slf4j;
 // http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
 // ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
 @Slf4j
+@Service
+@Sharable //不new，采用共享handler
 public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 
+	@Autowired
 	private MediaService mediaService;
+	
 	private WebSocketServerHandshaker handshaker;
-	private CameraRepository cameraRepository;
+	
+	/**
+	 * 网络超时
+	 */
+	@Value("${mediaserver.netTimeout:15000000}")
+	private String netTimeout;
+	/**
+	 * 读写超时
+	 */
+	@Value("${mediaserver.readOrWriteTimeout:15000000}")
+	private String readOrWriteTimeout;
 
-	public FlvHandler(MediaService mediaService, CameraRepository cameraRepository) {
-		super();
-		this.mediaService = mediaService;
-		this.cameraRepository = cameraRepository;
-	}
+	/**
+	 * 无人拉流观看是否自动关闭流
+	 */
+	@Value("${mediaserver.autoClose:true}")
+	private boolean autoClose;
+
+	/**
+	 * 无人拉流观看持续多久自动关闭，1分钟
+	 */
+	@Value("${mediaserver.autoClose.noClientsDuration:60000}")
+	private long noClientsDuration;
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -63,33 +85,19 @@ public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 				sendError(ctx, HttpResponseStatus.BAD_REQUEST);
 				return;
 			}
-			
-			Map<String, String> parse = parseUrl(req.uri());
 
-			String streamUrl = parse.get("url");
-			String autoCloseStr = parse.get("autoClose");
-			if (StrUtil.isBlank(streamUrl)) {
+			Camera camera = buildCamera(req.uri());
+
+			if (StrUtil.isBlank(camera.getUrl())) {
 				log.info("url有误");
 				sendError(ctx, HttpResponseStatus.BAD_REQUEST);
 				return;
 			}
 
-			Camera camera = new Camera();
-			camera.setUrl(streamUrl);
-
-			//是否需要自动关闭流
-			boolean autoClose = true;
-			if (StrUtil.isNotBlank(autoCloseStr)) {
-				if ("false".equals(autoCloseStr)) {
-					autoClose = false;
-					cameraRepository.add(camera);
-				}
-			}
-
 			if (!req.decoderResult().isSuccess() || (!"websocket".equals(req.headers().get("Upgrade")))) {
 				// http请求
 				sendFlvReqHeader(ctx);
-				mediaService.playForHttp(camera, ctx, autoClose);
+				mediaService.playForHttp(camera, ctx);
 
 			} else {
 				// websocket握手，请求升级
@@ -102,7 +110,7 @@ public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 					WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
 				} else {
 					handshaker.handshake(ctx.channel(), req);
-					mediaService.playForWs(camera, ctx, autoClose);
+					mediaService.playForWs(camera, ctx);
 				}
 			}
 
@@ -186,43 +194,80 @@ public class FlvHandler extends SimpleChannelInboundHandler<Object> {
 			return;
 		}
 	}
-	
-	private Map<String, String> parseUrl(String url) {
+
+	/**
+	 * 解析参数，构建camera，&&&参数必须加在url参数值后面，&&&autoClose=false&&&hls=true
+	 * ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&&&autoClose=false
+	 * @param url 
+	 * @return
+	 */
+	private Camera buildCamera(String url) {
+		Camera camera = new Camera();
+		setConfig(camera);
+		
 		String[] split = url.split("url=");
 		String urlParent = split[1];
-		Map<String, String> pMap = new HashMap<String, String>();
-		//有autoClose
-		if(urlParent.indexOf("autoClose") != -1) {
-			
-			String[] urlChild = urlParent.split("\\?");
-			if(urlChild.length > 1) {
-				String rUrl = urlChild[0];
-				String fullParam = urlChild[1];
-				
-				String[] params = fullParam.split("&");
-				
-				StringBuffer sb = new StringBuffer();
-				sb.append(rUrl);
-				sb.append("?");
-				
-				for (String param : params) {
-					if(param.indexOf("autoClose") == -1) {
-						sb.append(param);
-						sb.append("&");
-					} else {
-						String[] as = param.split("=");
-						pMap.put(as[0], as[1]);		
+
+		String[] split2 = urlParent.split("&&&");
+		if (split2.length > 0) {
+			for (String string : split2) {
+				if (string.indexOf("autoClose=") != -1) {
+					String[] as = string.split("=");
+					if (as.length <= 1) {
+						throw new RuntimeException("autoClose参数有误");
 					}
+					camera.setAutoClose(Convert.toBool(as[1], false));
+				} else if (string.indexOf("ffmpeg=") != -1) {
+					String[] as = string.split("=");
+					if (as.length <= 1) {
+						throw new RuntimeException("ffmpeg参数有误");
+					}
+					camera.setEnabledFFmpeg(Convert.toBool(as[1], false));
+				} else if (string.indexOf("hls=") != -1) {
+					String[] as = string.split("=");
+					if (as.length <= 1) {
+						throw new RuntimeException("hls参数有误");
+					}
+					camera.setEnabledHls(Convert.toBool(as[1], false));
+				} else {
+					camera.setUrl(string);
 				}
-				int lastIndexOf = sb.toString().lastIndexOf("&");
-				String xxx = sb.toString().substring(0, lastIndexOf);
-				pMap.put("url", xxx);
 			}
-			
-		} else {
-			pMap.put("url", urlParent);
 		}
-		return pMap;
+
+		if (isLocalFile(camera.getUrl())) {
+			camera.setType(1);
+		}
+
+		// 区分不同媒体
+		String mediaKey = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(mediaKey);
+
+		return camera;
+	}
+
+	/**
+	 * 配置默认参数
+	 */
+	private void setConfig(Camera camera) {
+		camera.setNetTimeout(netTimeout);
+		camera.setReadOrWriteTimeout(readOrWriteTimeout);
+		camera.setAutoClose(autoClose);
+		camera.setNoClientsDuration(noClientsDuration);
+	}
+	
+	/**
+	 * 是否是本地文件,判断前面长度是不是小于1个字符，认为是盘符
+	 * @return
+	 */
+	private boolean isLocalFile(String streamUrl) {
+		String[] split = streamUrl.trim().split("\\:");
+		if (split.length > 0) {
+			if (split[0].length() <= 1) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

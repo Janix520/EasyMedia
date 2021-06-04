@@ -9,7 +9,7 @@ import java.util.List;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.stereotype.Service;
 
-import com.zj.entity.Camera;
+import com.zj.dto.Camera;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
@@ -18,6 +18,12 @@ import cn.hutool.crypto.digest.MD5;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 后期考虑用sqllite数据库，json只适合小数据量
+ * 
+ * @author ZJ
+ *
+ */
 @Slf4j
 @Service
 public class CameraRepository {
@@ -85,7 +91,7 @@ public class CameraRepository {
 			}
 			writeData(newData);
 		} else {
-			log.info("未找到您要删除的流");
+//			log.info("未找到您要删除的流");
 		}
 	}
 

@@ -7,11 +7,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.zj.entity.Camera;
+import com.zj.dto.Camera;
 import com.zj.service.CameraRepository;
 import com.zj.service.MediaService;
 import com.zj.thread.MediaConvert;
-import com.zj.thread.MediaRecodeOrTransfer;
+import com.zj.thread.MediaTransfer;
+import com.zj.thread.MediaTransferFlvByJavacv;
 import com.zj.vo.Result;
 
 import cn.hutool.crypto.digest.MD5;
@@ -62,13 +63,17 @@ public class StreamController {
 		Collection<Camera> values = CameraRepository.cameraMap.values();
 		for (Camera camera : values) {
 			String digestHex = MD5.create().digestHex(camera.getUrl());
-			MediaRecodeOrTransfer mediaConvert = MediaService.cameras.get(digestHex);
-//			MediaConvert mediaConvert = MediaService.cameras.get(digestHex);
-			if(mediaConvert != null) {
-				camera.setStatus(mediaConvert.isRunning());
-			} else {
-				camera.setStatus(false);
+			MediaTransfer mediaConvert = MediaService.cameras.get(digestHex);
+			if(mediaConvert instanceof MediaTransferFlvByJavacv) {
+				MediaTransferFlvByJavacv mediaTransferFlvByJavacv = (MediaTransferFlvByJavacv) mediaConvert;
+//				MediaConvert mediaConvert = MediaService.cameras.get(digestHex);
+				if(mediaConvert != null) {
+					camera.setEnabledFlv(mediaTransferFlvByJavacv.isRunning());
+				} else {
+					camera.setEnabledFlv(false);
+				}
 			}
+
 		}
 		return new Result("查询成功", 200, values);
 	}

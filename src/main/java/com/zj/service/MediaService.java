@@ -2,14 +2,16 @@ package com.zj.service;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.zj.entity.Camera;
-import com.zj.thread.MediaRecodeOrTransfer;
+import com.zj.common.ClientType;
+import com.zj.dto.Camera;
+import com.zj.thread.MediaTransfer;
+import com.zj.thread.MediaTransferFlvByFFmpeg;
+import com.zj.thread.MediaTransferFlvByJavacv;
 
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.crypto.digest.MD5;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
@@ -21,89 +23,127 @@ import io.netty.channel.ChannelHandlerContext;
  */
 @Service
 public class MediaService {
-
-	// 缓存流转换线程
-	public static ConcurrentHashMap<String, MediaRecodeOrTransfer> cameras = new ConcurrentHashMap<>();
-
-	/**
-	 * 网络超时
-	 */
-	@Value("${mediaserver.netTimeout:15000000}")
-	private String netTimeout;
-	/**
-	 * 读写超时
-	 */
-	@Value("${mediaserver.readOrWriteTimeout:15000000}")
-	private String readOrWriteTimeout;
+	
+	@Autowired
+	private CameraRepository cameraRepository;
 
 	/**
-	 * 无人拉流观看是否自动关闭流
+	 * 缓存流转换线程
 	 */
-	@Value("${mediaserver.autoClose:true}")
-	private boolean autoClose;
+	public static ConcurrentHashMap<String, MediaTransfer> cameras = new ConcurrentHashMap<>();
 
-	/**
-	 * 无人拉流观看持续多久自动关闭，1分钟
-	 */
-	@Value("${mediaserver.autoClose.noClientsDuration:60000}")
-	private long noClientsDuration;
 	
 	/**
-	 *http-flv播放
+	 * http-flv播放
 	 * @param camera
 	 * @param ctx
-	 * @param isAutoClose
 	 */
-	public void playForHttp(Camera camera, ChannelHandlerContext ctx, Boolean isAutoClose) {
-
-		// 区分不同媒体
-		String mediaKey = MD5.create().digestHex(camera.getUrl());
-		camera.setMediaKey(mediaKey);
-
-		if (cameras.containsKey(mediaKey)) {
-			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
-			cameras.put(mediaKey, mediaConvert);
-			mediaConvert.addHttpClient(ctx);
+	public void playForHttp(Camera camera, ChannelHandlerContext ctx) {
+		doStore(camera);
+		
+		if (cameras.containsKey(camera.getMediaKey())) {
+			MediaTransfer mediaConvert = cameras.get(camera.getMediaKey());
+			if(mediaConvert instanceof MediaTransferFlvByJavacv) {
+				MediaTransferFlvByJavacv mediaTransferFlvByJavacv = (MediaTransferFlvByJavacv) mediaConvert;
+				//如果当前已经用ffmpeg，则重新拉流
+				if(camera.isEnabledFFmpeg()) {
+					mediaTransferFlvByJavacv.setRunning(false);
+					cameras.remove(camera.getMediaKey());
+					this.playForHttp(camera, ctx);
+				} else {
+					mediaTransferFlvByJavacv.addClient(ctx, ClientType.HTTP);
+				}
+			} else if (mediaConvert instanceof MediaTransferFlvByFFmpeg) {
+				MediaTransferFlvByFFmpeg mediaTransferFlvByFFmpeg = (MediaTransferFlvByFFmpeg) mediaConvert;
+				//如果当前已经用javacv，则关闭再重新拉流
+				if(!camera.isEnabledFFmpeg()) {
+					mediaTransferFlvByFFmpeg.setRunning(false);
+					cameras.remove(camera.getMediaKey());
+					this.playForHttp(camera, ctx);
+				} else {
+					mediaTransferFlvByFFmpeg.addClient(ctx, ClientType.HTTP);
+				}
+			}
+			
 		} else {
-			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, isAutoClose==null?autoClose:isAutoClose,noClientsDuration, netTimeout,readOrWriteTimeout);
-			cameras.put(mediaKey, mediaConvert);
-			ThreadUtil.execute(mediaConvert);
-			mediaConvert.addHttpClient(ctx);
+			if(camera.isEnabledFFmpeg()) {
+				MediaTransferFlvByFFmpeg mediaft = new MediaTransferFlvByFFmpeg(camera);
+				mediaft.execute();
+				cameras.put(camera.getMediaKey(), mediaft);
+				mediaft.addClient(ctx, ClientType.HTTP);
+			} else {
+				MediaTransferFlvByJavacv mediaConvert = new MediaTransferFlvByJavacv(camera);
+				cameras.put(camera.getMediaKey(), mediaConvert);
+				ThreadUtil.execute(mediaConvert);
+				mediaConvert.addClient(ctx, ClientType.HTTP);
+			}
+			
 		}
 	}
 
-	public void playForWs(Camera camera, ChannelHandlerContext ctx, Boolean isAutoClose) {
-
-		// 区分不同媒体
-		String mediaKey = MD5.create().digestHex(camera.getUrl());
-		camera.setMediaKey(mediaKey);
-
-		if (cameras.containsKey(mediaKey)) {
-			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
-			cameras.put(mediaKey, mediaConvert);
-			mediaConvert.addWsClient(ctx);
+	/**
+	 * ws-flv播放
+	 * @param camera
+	 * @param ctx
+	 */
+	public void playForWs(Camera camera, ChannelHandlerContext ctx) {
+		doStore(camera);
+		
+		if (cameras.containsKey(camera.getMediaKey())) {
+			MediaTransfer mediaConvert = cameras.get(camera.getMediaKey());
+			if(mediaConvert instanceof MediaTransferFlvByJavacv) {
+				MediaTransferFlvByJavacv mediaTransferFlvByJavacv = (MediaTransferFlvByJavacv) mediaConvert;
+				//如果当前已经用ffmpeg，则重新拉流
+				if(camera.isEnabledFFmpeg()) {
+					mediaTransferFlvByJavacv.setRunning(false);
+					cameras.remove(camera.getMediaKey());
+					this.playForWs(camera, ctx);
+				} else {
+					mediaTransferFlvByJavacv.addClient(ctx, ClientType.WEBSOCKET);
+				}
+			} else if (mediaConvert instanceof MediaTransferFlvByFFmpeg) {
+				MediaTransferFlvByFFmpeg mediaTransferFlvByFFmpeg = (MediaTransferFlvByFFmpeg) mediaConvert;
+				//如果当前已经用javacv，则关闭再重新拉流
+				if(!camera.isEnabledFFmpeg()) {
+					mediaTransferFlvByFFmpeg.setRunning(false);
+					cameras.remove(camera.getMediaKey());
+					this.playForWs(camera, ctx);
+				} else {
+					mediaTransferFlvByFFmpeg.addClient(ctx, ClientType.WEBSOCKET);
+				}
+			}
 		} else {
-			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, isAutoClose==null?autoClose:isAutoClose,noClientsDuration, netTimeout,readOrWriteTimeout);
-			cameras.put(mediaKey, mediaConvert);
-			ThreadUtil.execute(mediaConvert);
-			mediaConvert.addWsClient(ctx);
+			if(camera.isEnabledFFmpeg()) {
+				MediaTransferFlvByFFmpeg mediaft = new MediaTransferFlvByFFmpeg(camera);
+				mediaft.execute();
+				cameras.put(camera.getMediaKey(), mediaft);
+				mediaft.addClient(ctx, ClientType.WEBSOCKET);
+			} else {
+				MediaTransferFlvByJavacv mediaConvert = new MediaTransferFlvByJavacv(camera);
+				cameras.put(camera.getMediaKey(), mediaConvert);
+				ThreadUtil.execute(mediaConvert);
+				mediaConvert.addClient(ctx, ClientType.WEBSOCKET);	
+			}
 		}
 	}
 	
 	/**
-	 * api拉流
+	 * api播放
 	 * @param camera
 	 */
 	public void playForApi(Camera camera) {
-
-		// 区分不同媒体
-		String mediaKey = MD5.create().digestHex(camera.getUrl());
-		camera.setMediaKey(mediaKey);
-
-		if (!cameras.containsKey(mediaKey)) {
-			MediaRecodeOrTransfer mediaConvert = new MediaRecodeOrTransfer(camera, autoClose,noClientsDuration,netTimeout,readOrWriteTimeout);
-			cameras.put(mediaKey, mediaConvert);
-			ThreadUtil.execute(mediaConvert);
+		doStore(camera);
+		
+		if (!cameras.containsKey(camera.getMediaKey())) {
+			if(camera.isEnabledFFmpeg()) {
+				MediaTransferFlvByFFmpeg mediaft = new MediaTransferFlvByFFmpeg(camera);
+				mediaft.execute();
+				cameras.put(camera.getMediaKey(), mediaft);
+			} else {
+				MediaTransferFlvByJavacv mediaConvert = new MediaTransferFlvByJavacv(camera);
+				cameras.put(camera.getMediaKey(), mediaConvert);
+				ThreadUtil.execute(mediaConvert);
+			}
 		}
 	}
 	
@@ -112,14 +152,30 @@ public class MediaService {
 	 * @param camera
 	 */
 	public void closeForApi(Camera camera) {
-
-		// 区分不同媒体
-		String mediaKey = MD5.create().digestHex(camera.getUrl());
-
-		if (cameras.containsKey(mediaKey)) {
-			MediaRecodeOrTransfer mediaConvert = cameras.get(mediaKey);
-			mediaConvert.setRunning(false);
-			cameras.remove(mediaKey);
+		
+		if (cameras.containsKey(camera.getMediaKey())) {
+			MediaTransfer mediaConvert = cameras.get(camera.getMediaKey());
+			if(mediaConvert instanceof MediaTransferFlvByJavacv) {
+				MediaTransferFlvByJavacv mediaTransferFlvByJavacv = (MediaTransferFlvByJavacv) mediaConvert;
+				mediaTransferFlvByJavacv.setRunning(false);
+				cameras.remove(camera.getMediaKey());
+			}
 		}
 	}
+	
+	/**
+	 * 是否要做存储
+	 * @param camera
+	 */
+	public void doStore(Camera camera) {
+		/**
+		 * 不需要自动关闭，保存到json，后续可能会采用sqllite等本地数据库
+		 */
+		if (!camera.isAutoClose()) {
+			cameraRepository.add(camera);
+		} else {
+			cameraRepository.del(camera);
+		}
+	}
+	
 }

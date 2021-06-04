@@ -12,7 +12,7 @@ import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 
-import com.zj.entity.Camera;
+import com.zj.dto.Camera;
 import com.zj.service.MediaService;
 
 import cn.hutool.crypto.digest.MD5;
@@ -25,6 +25,9 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 
+ * ******此类已经过时，后续会删除，请使用MediaRecodeOrTransfer******
+ * 
  * 拉流转换推流处理线程
  * 
  * @author ZJ

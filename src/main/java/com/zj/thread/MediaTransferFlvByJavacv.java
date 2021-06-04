@@ -14,7 +14,8 @@ import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 
-import com.zj.entity.Camera;
+import com.zj.common.ClientType;
+import com.zj.dto.Camera;
 import com.zj.service.MediaService;
 
 import io.netty.buffer.Unpooled;
@@ -38,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  *  * @author eguid
  */
 @Slf4j
-public class MediaRecodeOrTransfer extends Thread {
+public class MediaTransferFlvByJavacv extends MediaTransfer implements Runnable {
 	static {
 		avutil.av_log_set_level(avutil.AV_LOG_ERROR);
 		FFmpegLogCallback.set();
@@ -61,16 +62,6 @@ public class MediaRecodeOrTransfer extends Thread {
 	private boolean grabberStatus = false;
 	
 	private boolean recorderStatus = false;
-
-	/**
-	 * 是否可以自动关闭流
-	 */
-	private boolean autoClose = true;
-
-	/**
-	 * 无人观看时持续多久自动关闭流
-	 */
-	private long noClientsDuration = 60000;
 
 	/**
 	 * 当前在线人数
@@ -108,26 +99,12 @@ public class MediaRecodeOrTransfer extends Thread {
 	private Thread listenThread;
 
 	/**
-	 * 网络超时，ffmpeg默认5秒，这里设置15秒
-	 */
-	private String netTimeout = "15000000";
-	/**
-	 * 读写超时，默认5秒
-	 */
-	private String readOrWriteTimeout = "15000000";
-
-	/**
 	 * @param camera
 	 * @param autoClose   流是否可以自动关闭
 	 */
-	public MediaRecodeOrTransfer(Camera camera, boolean autoClose,long noClientsDuration,String netTimeout,String readOrWriteTimeout) {
+	public MediaTransferFlvByJavacv(Camera camera) {
 		super();
 		this.camera = camera;
-		this.autoClose = autoClose;
-		this.netTimeout=netTimeout;
-		this.readOrWriteTimeout=readOrWriteTimeout;
-		this.autoClose=autoClose;
-		this.noClientsDuration=noClientsDuration;
 	}
 
 	public boolean isRunning() {
@@ -146,18 +123,18 @@ public class MediaRecodeOrTransfer extends Thread {
 		// 拉流器
 		grabber = new FFmpegFrameGrabber(camera.getUrl());
 		// 超时时间(15秒)
-		grabber.setOption("stimeout", netTimeout);
+		grabber.setOption("stimeout", camera.getNetTimeout());
 		grabber.setOption("threads", "1");
 		//grabber.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
 		// 设置缓存大小，提高画质、减少卡顿花屏
 		grabber.setOption("buffer_size", "1024000");
 
 		// 读写超时，适用于所有协议的通用读写超时
-		grabber.setOption("rw_timeout", readOrWriteTimeout);
+		grabber.setOption("rw_timeout", camera.getReadOrWriteTimeout());
 		// 探测视频流信息，为空默认5000000微秒
-		grabber.setOption("probesize", readOrWriteTimeout);
+		grabber.setOption("probesize", camera.getReadOrWriteTimeout());
 		// 解析视频流信息，为空默认5000000微秒
-		grabber.setOption("analyzeduration", readOrWriteTimeout);
+		grabber.setOption("analyzeduration", camera.getReadOrWriteTimeout());
 
 		// 如果为rtsp流，增加配置
 		if ("rtsp".equals(camera.getUrl().substring(0, 4))) {
@@ -268,27 +245,9 @@ public class MediaRecodeOrTransfer extends Thread {
 	}
 	
 	/**
-	 * 是否是本地文件
-	 * @return 
-	 */
-	private boolean isLocalFile(String streamUrl) {
-		String[] split = streamUrl.trim().split("\\:");
-		if(split.length > 0) {
-			if(split[0].length() <= 1) {
-				return true;
-			} 
-		}
-		return false;
-	}
-	
-	/**
 	 * 将视频源转换为flv
 	 */
 	protected void transferStream2Flv() {
-		if(isLocalFile(camera.getUrl())) {
-			camera.setType(1);
-		}
-		
 		if(!createGrabber()) {
 			return;
 		}
@@ -421,7 +380,7 @@ public class MediaRecodeOrTransfer extends Thread {
 		} finally {
 			running = false;
 		}
-		log.info("关闭媒体流，{} ", camera.getUrl());
+		log.info("关闭媒体流-javacv，{} ", camera.getUrl());
 	}
 	
 	/**
@@ -463,50 +422,6 @@ public class MediaRecodeOrTransfer extends Thread {
 	}
 
 	/**
-	 * 新增ws客戶端
-	 * 
-	 * @param ctx
-	 */
-	public void addWsClient(ChannelHandlerContext ctx) {
-		int timeout = 0;
-		while (true) {
-			try {
-				if (running) {
-					try {
-						if (ctx.channel().isWritable()) {
-							// 发送帧前先发送header
-							ChannelFuture future = ctx
-									.writeAndFlush(new BinaryWebSocketFrame(Unpooled.copiedBuffer(header)));
-							future.addListener(new GenericFutureListener<Future<? super Void>>() {
-								@Override
-								public void operationComplete(Future<? super Void> future) throws Exception {
-									if (future.isSuccess()) {
-										wsClients.put(ctx.channel().id().toString(), ctx);
-									}
-								}
-							});
-						}
-
-					} catch (java.lang.Exception e) {
-						e.printStackTrace();
-					}
-					break;
-				}
-
-				// 等待推拉流启动
-				Thread.sleep(100);
-				// 启动录制器失败
-				timeout += 100;
-				if (timeout > 15000) {
-					break;
-				}
-			} catch (java.lang.Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	/**
 	 * 判断有没有客户端，关闭流
 	 * 
 	 * @return
@@ -521,13 +436,14 @@ public class MediaRecodeOrTransfer extends Thread {
 			log.info("\r\n{}\r\nhttp连接数：{}, ws连接数：{} \r\n", camera.getUrl(), newHcSize, newWcSize);
 		}
 
-		// 自动拉流无需关闭
-		if (!autoClose) {
+		// 无需自动关闭
+		if (!camera.isAutoClose()) {
 			return;
 		}
+		
 		if (httpClients.isEmpty() && wsClients.isEmpty()) {
 			// 等待20秒还没有客户端，则关闭推流
-			if (noClient > noClientsDuration) {
+			if (noClient > camera.getNoClientsDuration()) {
 				running = false;
 				MediaService.cameras.remove(camera.getMediaKey());
 			} else {
@@ -535,6 +451,7 @@ public class MediaRecodeOrTransfer extends Thread {
 //				log.info("\r\n{}\r\n {} 秒自动关闭推拉流 \r\n", camera.getUrl(), noClientsDuration-noClient);
 			}
 		} else {
+			//重置计时
 			noClient = 0;
 		}
 	}
@@ -558,27 +475,41 @@ public class MediaRecodeOrTransfer extends Thread {
 	}
 
 	/**
-	 * 新增http客戶端
+	 * 新增客户端
 	 * 
-	 * @param ctx
+	 * @param ctx   netty client
+	 * @param ctype enum,ClientType
 	 */
-	public void addHttpClient(ChannelHandlerContext ctx) {
+	public void addClient(ChannelHandlerContext ctx, ClientType ctype) {
 		int timeout = 0;
 		while (true) {
 			try {
-				if (running) {
+				if (header != null) {
 					try {
 						if (ctx.channel().isWritable()) {
 							// 发送帧前先发送header
-							ChannelFuture future = ctx.writeAndFlush(Unpooled.copiedBuffer(header));
-							future.addListener(new GenericFutureListener<Future<? super Void>>() {
-								@Override
-								public void operationComplete(Future<? super Void> future) throws Exception {
-									if (future.isSuccess()) {
-										httpClients.put(ctx.channel().id().toString(), ctx);
+							if (ClientType.HTTP.getType() == ctype.getType()) {
+								ChannelFuture future = ctx.writeAndFlush(Unpooled.copiedBuffer(header));
+								future.addListener(new GenericFutureListener<Future<? super Void>>() {
+									@Override
+									public void operationComplete(Future<? super Void> future) throws Exception {
+										if (future.isSuccess()) {
+											httpClients.put(ctx.channel().id().toString(), ctx);
+										}
 									}
-								}
-							});
+								});
+							} else if (ClientType.WEBSOCKET.getType() == ctype.getType()) {
+								ChannelFuture future = ctx
+										.writeAndFlush(new BinaryWebSocketFrame(Unpooled.copiedBuffer(header)));
+								future.addListener(new GenericFutureListener<Future<? super Void>>() {
+									@Override
+									public void operationComplete(Future<? super Void> future) throws Exception {
+										if (future.isSuccess()) {
+											wsClients.put(ctx.channel().id().toString(), ctx);
+										}
+									}
+								});
+							}
 						}
 
 					} catch (java.lang.Exception e) {
@@ -588,11 +519,10 @@ public class MediaRecodeOrTransfer extends Thread {
 				}
 
 				// 等待推拉流启动
-				Thread.sleep(100);
-
+				Thread.sleep(50);
 				// 启动录制器失败
-				timeout += 100;
-				if (timeout > 15000) {
+				timeout += 50;
+				if (timeout > 30000) {
 					break;
 				}
 			} catch (java.lang.Exception e) {
