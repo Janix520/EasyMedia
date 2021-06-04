@@ -44,6 +44,7 @@ public class CameraRepository {
 	 */
 	public String add(Camera camera) {
 		String digestHex = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(digestHex);
 
 		if (cameraMap.containsKey(digestHex)) {
 			log.info("\r\n已存在流>>>\r\n{}\r\n", camera.getUrl());
@@ -61,6 +62,7 @@ public class CameraRepository {
 
 	public String edit(Camera camera) {
 		String digestHex = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(digestHex);
 
 		if (cameraMap.containsKey(digestHex)) {
 			cameraMap.put(digestHex, camera);

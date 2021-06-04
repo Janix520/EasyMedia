@@ -12,6 +12,7 @@ import com.zj.thread.MediaTransferFlvByFFmpeg;
 import com.zj.thread.MediaTransferFlvByJavacv;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.crypto.digest.MD5;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
@@ -130,11 +131,15 @@ public class MediaService {
 	/**
 	 * api播放
 	 * @param camera
+	 * @return 
 	 */
-	public void playForApi(Camera camera) {
-		doStore(camera);
+	public boolean playForApi(Camera camera) {
+		// 区分不同媒体
+		String mediaKey = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(mediaKey);
 		
-		if (!cameras.containsKey(camera.getMediaKey())) {
+		MediaTransfer mediaTransfer = cameras.get(camera.getMediaKey());
+		if (null == mediaTransfer) {
 			if(camera.isEnabledFFmpeg()) {
 				MediaTransferFlvByFFmpeg mediaft = new MediaTransferFlvByFFmpeg(camera);
 				mediaft.execute();
@@ -145,6 +150,34 @@ public class MediaService {
 				ThreadUtil.execute(mediaConvert);
 			}
 		}
+		
+		//同步等待
+		if(mediaTransfer instanceof MediaTransferFlvByJavacv) {
+			MediaTransferFlvByJavacv mediaft = (MediaTransferFlvByJavacv) mediaTransfer;
+			// 30秒还没true认为启动不了
+			for (int i = 0; i < 60; i++) {
+				if (mediaft.isRunning() && mediaft.isGrabberStatus() && mediaft.isRecorderStatus()) {
+					return true;
+				}
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+				}
+			}
+		} else if (mediaTransfer instanceof MediaTransferFlvByFFmpeg) {
+			MediaTransferFlvByFFmpeg mediaft = (MediaTransferFlvByFFmpeg) mediaTransfer;
+			// 30秒还没true认为启动不了
+			for (int i = 0; i < 60; i++) {
+				if (mediaft.isRunning()) {
+					return true;
+				}
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -152,6 +185,8 @@ public class MediaService {
 	 * @param camera
 	 */
 	public void closeForApi(Camera camera) {
+		String mediaKey = MD5.create().digestHex(camera.getUrl());
+		camera.setMediaKey(mediaKey);
 		
 		if (cameras.containsKey(camera.getMediaKey())) {
 			MediaTransfer mediaConvert = cameras.get(camera.getMediaKey());
@@ -173,9 +208,7 @@ public class MediaService {
 		 */
 		if (!camera.isAutoClose()) {
 			cameraRepository.add(camera);
-		} else {
-			cameraRepository.del(camera);
-		}
+		} 
 	}
 	
 }

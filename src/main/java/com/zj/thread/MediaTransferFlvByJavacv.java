@@ -115,6 +115,22 @@ public class MediaTransferFlvByJavacv extends MediaTransfer implements Runnable 
 		this.running = running;
 	}
 
+	public boolean isGrabberStatus() {
+		return grabberStatus;
+	}
+
+	public void setGrabberStatus(boolean grabberStatus) {
+		this.grabberStatus = grabberStatus;
+	}
+
+	public boolean isRecorderStatus() {
+		return recorderStatus;
+	}
+
+	public void setRecorderStatus(boolean recorderStatus) {
+		this.recorderStatus = recorderStatus;
+	}
+
 	/**
 	 * 创建拉流器
 	 * @return

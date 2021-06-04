@@ -22,6 +22,7 @@ import com.zj.server.MediaServer;
 import com.zj.service.CameraRepository;
 import com.zj.service.MediaService;
 
+import cn.hutool.crypto.digest.MD5;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,13 @@ public class InitServer implements CommandLineRunner {
 			cameraRepository.readDataToMap(list);
 
 			for (Camera camera : CameraRepository.cameraMap.values()) {
-				mediaService.playForApi(camera);
+				// 区分不同媒体
+				String mediaKey = MD5.create().digestHex(camera.getUrl());
+				camera.setMediaKey(mediaKey);
+				//已启用的自动拉流，不启用的不自动拉
+				if(camera.isEnabledFlv()) {
+					mediaService.playForApi(camera);
+				}
 			}
 		} else {
 			log.info("未发现camera.json，您可以通过restful api添加或删除流！");
