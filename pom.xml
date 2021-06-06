@@ -47,13 +47,15 @@
 			</exclusions>
 		</dependency>
 
-		<dependency>
+		<!-- 全量引入 ，包含ffmpeg、opencv等-->
+		<!-- <dependency>
 			<groupId>org.bytedeco</groupId>
 			<artifactId>javacv-platform</artifactId>
 			<version>1.5.4</version>
-		</dependency>
+		</dependency> -->
 
-<!-- 		<dependency>
+		<!-- 媒体只用到以下两个 -->
+		<dependency>
 			<groupId>org.bytedeco</groupId>
 			<artifactId>javacv</artifactId>
 			<version>1.5.4</version>
@@ -63,7 +65,7 @@
 			<groupId>org.bytedeco</groupId>
 			<artifactId>ffmpeg-platform</artifactId>
 			<version>4.3.1-1.5.4</version>
-		</dependency> -->
+		</dependency>
 
 
 		<dependency>
