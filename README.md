@@ -4,24 +4,20 @@
 #### 介绍
 Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于直播点播），支持rtsp、h264、h265等、rtmp等多种源，h5纯js播放（不依赖flash），不需要依赖nginx等第三方，延迟大部分在1-5秒内（已经支持转复用，h264的流自动转封装，超低延迟。PS:当然还有种更低延迟的不用flv方案没时间写了，但是主要是flv比较大众，这个一般也够用了）。
 
-******************即将有重大更新，前端尚未更新，教程等我抽空完善*********************
-
-#### 成品下载
-!!!此版本已修复大华等rtsp后面带参数的地址解析、并支持转复用或转码
-链接：https://pan.baidu.com/s/10-Piwf1WsypvCgsvx2ucmA 
-提取码：xe1w 
-复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
-
-!!!另外有一个ffmpeg体验版，有些地址播放不了的你可以试试这款，基本都支持，再无绿色杠杠啥的了。
-千万注意，此版本只是体验版并没完善。
-链接：https://pan.baidu.com/s/1SxCgPH479W-h7Dy-DvD4UA 
-提取码：d5ai 
-复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
-
-
 
 [前端源码传送门](https://download.csdn.net/download/Janix520/15785632 "前端源码传送门")
+PS：项目里已经集成最新版编译好的前端，由于前端只是个demo，这里是没有hls功能的版本，hls前端播放比较简单，我就懒得上传了
 
+
+#### 功能汇总 （文档水平有限，使用前尽量先看完readme）
+- 支持播放 rtsp、rtmp、http、文件等流……
+- pc端桌面投影
+- 支持永久播放、按需播放（无人观看自动断开）
+- 自动判断流格式h264、h265，自动转封装
+- 支持http、ws协议的flv
+- 支持hls内存切片（不占用本地磁盘，只占用网络资源）
+- 重连功能
+- 支持javacv、ffmpeg方式切换
 
 #### 软件架构
 - netty负责播放地址解析及视频传输，通过javacv推拉流存到内存里，直接通过输出到前端播放
@@ -46,16 +42,36 @@ ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Chan
 文件（支持格式参照ffmpeg支持的格式）：
 http://localhost:8866/live?url=d:/flv/testVideo.mp4
 ws://localhost:8866/live?url=d:/flv/testVideo.mp4
+电脑桌面投影（url改成desktop即可）：
+http://localhost:8866/live?url=desktop
+ws://localhost:8866/live?url=desktop
 ```
 
 - 推拉流（有两种方式）
 1. 按需播放（默认）直接使用上面播放地址就可以播放，每次第一个用户打开会创建推流，没人看时十几秒后会自动断开流。
 2. 永久播放，通过restfu api或者页面先新增流，再开启推流，在服务同级目录会生成一个camera.json，重启服务发现camera.json也会自动推流，用json文件是方便手动维护源地址，之后通过播放地址可以在浏览器直接秒开。
+3. hls播放， http://localhost:8888/hls?url={您的源地址}
+
 ```
 永久播放还有一种捷径，就是在播放地址后面加上autoClose=false参数，也会加入到json中。
 例如：
-http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&autoClose=false
-ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&autoClose=false
+http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&&&autoClose=false
+ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&&&autoClose=false
+###
+hls播放例子：(注意：hls为http端口8888，并且不支持url后面参数，开启切片后可以播放)
+http://localhost:8888/hls?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102
+```
+
+- url参数说明
+```
+参数加在播放地址url最后面，使用 [&&&] 符号
+例如：
+http://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&&&autoClose=false&&&ffmpeg=true
+ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Channels/102&&&autoClose=false&&&ffmpeg=true
+###
+autoClose=false 设置为永久播放
+ffmpeg=true 使用ffmpeg方式，提高兼容稳定性（不支持的流可以试试这个参数）
+//hls=true（目前还不支持此参数，只能api或者网页端控制开启）
 ```
 
 - 页面功能
@@ -68,8 +84,10 @@ ws://localhost:8866/live?url=rtsp://admin:VZCDOY@192.168.2.84:554/Streaming/Chan
 ```
 新增流 http://localhost:8888/add?url={您的源地址}&remark={备注}
 停止并删除 http://localhost:8888/del?url={您的源地址}
-停止推流 http://localhost:8888/stop?url={您的源地址}
-开始推流 http://localhost:8888/start?url={您的源地址}
+停止flv推流 http://localhost:8888/stop?url={您的源地址}
+开启flv推流 http://localhost:8888/start?url={您的源地址}
+开启hls切片 http://localhost:8888/startHls?url={您的源地址}
+停止hls切片 http://localhost:8888/stopHls?url={您的源地址}
 查看保存的流 http://localhost:8888/list
 ```
 
@@ -90,6 +108,7 @@ java -jar -Dserver.port=页面端口 -Dmediaserver.port=媒体端口 EasyMedia-0
 ![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/1.png)
 ![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/2.png)
 ![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/3.png)
+![](https://gitee.com/52jian/EasyMedia/raw/master/snapshot/4.png)
 
 
 #### 源码教程
@@ -98,7 +117,17 @@ java -jar -Dserver.port=页面端口 -Dmediaserver.port=媒体端口 EasyMedia-0
 2.  标准的maven项目，sts、eclipse或者idea导入，直接运行main方法
 
 
-#### 更新说明 2021-05-18
+#### 更新说明 2021-06-06
+- 新增支持使用ffmpeg推拉流，提高兼容稳定性（流几乎全支持，再无花屏，绿色杠杠啥的）
+- 新增“hls内存切片”，不占用本地磁盘读写，速度你懂的，只占用网络资源，目前默认全部转码，延迟在5秒左右，稍微费点cpu
+- 优化接口、优化服务、新增其他配置参数
+- 新增pc端桌面投影
+- 更新前端功能
+- 完善项目注释
+- 新增启动logo
+
+
+#### 更新说明 2021-05-21
 - 支持转复用或转码，h264的流支持自动转封装，超低延迟
 
 
@@ -135,9 +164,10 @@ java -jar -Dserver.port=页面端口 -Dmediaserver.port=媒体端口 EasyMedia-0
 
 
 #### 后续计划
-- 完善web管理页面，方便管理点播文件和播放列表等
-- 增加录制功能
-- 由于hls(m3u8)兼容性最好，水果、安卓和PC通吃，所以后续会加入m3u8切片方式
-- 原本还写了个通过ffmpeg子进程推流，然后用socket服务接收的方案，等javacv版搞完善了再弄。
-- 没想到这项目会有这么多人用，我会抽空慢慢维护。
+- ✔ web管理页面其实只也是个demo，以后看情况更新了
+- ✖ 增加录制功能（打算专门做存储至分布式文件系统，独立开来，先不集成进来了）
+- ✔ 由于hls(m3u8)兼容性最好，水果、安卓和PC通吃，所以后续会加入m3u8切片方式
+- ✔ 原本还写了个通过ffmpeg子进程推流，然后用socket服务接收的方案，等javacv版搞完善了再弄。
+- 云台控制（集成海康大华云台接口），看情况集成
+- ***大部分功能已完成，个人精力有限，后续更新频率会适当降低***
 

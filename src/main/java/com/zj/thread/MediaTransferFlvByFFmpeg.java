@@ -338,6 +338,7 @@ public class MediaTransferFlvByFFmpeg extends MediaTransfer {
 					e.printStackTrace();
 				} finally {
 					try {
+						running = false;
 						in.close();
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -365,6 +366,7 @@ public class MediaTransferFlvByFFmpeg extends MediaTransfer {
 					e.printStackTrace();
 				} finally {
 					try {
+						running = false;
 						err.close();
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -397,6 +399,19 @@ public class MediaTransferFlvByFFmpeg extends MediaTransfer {
 		}
 		new RuntimeException("无法启用端口");
 		return "";
+	}
+	
+	/**
+	 * 关闭
+	 */
+	public void stop() {
+		this.running = false;
+		try {
+			this.process.destroy();
+			log.info("关闭媒体流-ffmpeg，{} ", camera.getUrl());
+		} catch (java.lang.Exception e) {
+			process.destroyForcibly();
+		}
 	}
 	
 	/**

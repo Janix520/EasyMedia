@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.zj.dto.Camera;
 import com.zj.service.CameraRepository;
+import com.zj.service.HlsService;
 import com.zj.service.MediaService;
 import com.zj.thread.MediaTransfer;
 import com.zj.thread.MediaTransferFlvByFFmpeg;
 import com.zj.thread.MediaTransferFlvByJavacv;
+import com.zj.thread.MediaTransferHls;
 import com.zj.vo.CameraVo;
 import com.zj.vo.Result;
 
@@ -90,28 +92,6 @@ public class StreamController {
 	}
 	
 	/**
-	 * 开启hls
-	 * @param camera
-	 * @return
-	 */
-	@RequestMapping("startHls")
-	public Result startHls(Camera camera) {
-//		boolean playForApi = mediaService.playForApi(camera);
-		return new Result("开始推流", 200, true);
-	}
-	
-	/**
-	 * 关闭hls
-	 * @param camera
-	 * @return
-	 */
-	@RequestMapping("stopHls")
-	public Result stopHls(Camera camera) {
-//		mediaService.closeForApi(camera);
-		return new Result("停止推流", 200, true);
-	}
-	
-	/**
 	 * 列表
 	 * @return
 	 */
@@ -124,6 +104,7 @@ public class StreamController {
 			String digestHex = MD5.create().digestHex(camera.getUrl());
 			
 			MediaTransfer mediaConvert = MediaService.cameras.get(digestHex);
+			MediaTransferHls mediaTransferHls = HlsService.cameras.get(digestHex);
 			
 			CameraVo cameraVo = new CameraVo();
 			
@@ -139,6 +120,10 @@ public class StreamController {
 				cameraVo.setEnabledFlv(mediaTransferFlvByFFmpeg.isRunning());
 				cameraVo.setMode("ffmpeg");
 			} 
+			
+			if(null != mediaTransferHls) {
+				cameraVo.setEnabledHls(mediaTransferHls.isRunning());
+			}
 
 			list.add(cameraVo);
 		}

@@ -1,5 +1,10 @@
 package com.zj.common;
 
+/**
+ * 
+ * @author ZJ
+ *
+ */
 public enum ClientType {
 
 	HTTP(0,"http"),
