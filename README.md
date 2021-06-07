@@ -6,6 +6,8 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 
 
 [成品下载](https://pan.baidu.com/s/17Spfa6-_R4bOsie4qcLM4w "成品下载")
+
+
 链接：https://pan.baidu.com/s/17Spfa6-_R4bOsie4qcLM4w 
 提取码：gomv 
 复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
@@ -16,7 +18,7 @@ Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于�
 PS：项目里已经集成最新版编译好的前端，由于前端只是个demo，这里是没有hls功能的版本，hls前端播放比较简单，我就懒得上传了
 
 
-#### 功能汇总 （文档水平有限，使用前尽量先看完readme）
+#### 功能汇总 （不知道怎么使用的可以直接看wiki，简洁明了）
 - 支持播放 rtsp、rtmp、http、文件等流……
 - pc端桌面投影
 - 支持永久播放、按需播放（无人观看自动断开）
