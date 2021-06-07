@@ -5,8 +5,10 @@
 Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于直播点播），支持rtsp、h264、h265等、rtmp等多种源，h5纯js播放（不依赖flash），不需要依赖nginx等第三方，延迟大部分在1-5秒内（已经支持转复用，h264的流自动转封装，超低延迟。PS:当然还有种更低延迟的不用flv方案没时间写了，但是主要是flv比较大众，这个一般也够用了）。
 
 
-[成品下载](https://data-hz-pds.teambition.net/9SJkXQ1A%2F72196%2F60bceac44870391c158a4ff5a9de06138213d509%2F60bceac490e6b6e8f6a6486197edc647d7e99e17?di=hz423&dr=72196&f=60bceac44870391c158a4ff5a9de06138213d509&response-content-disposition=attachment%3B%20filename%2A%3DUTF-8%27%27EasyMedia-0.0.1-SNAPSHOT.jar&u=228014786770217879&x-oss-access-key-id=LTAIsE5mAn2F493Q&x-oss-expires=1622994541&x-oss-signature=gsN0jUwoenq0gfF1x9p2vPoDgTCdFb4qj0JuajEhHkk%3D&x-oss-signature-version=OSS2 "成品下载")
-
+[成品下载](https://pan.baidu.com/s/17Spfa6-_R4bOsie4qcLM4w "成品下载")
+链接：https://pan.baidu.com/s/17Spfa6-_R4bOsie4qcLM4w 
+提取码：gomv 
+复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V4的分享
 
 [前端源码传送门](https://download.csdn.net/download/Janix520/15785632 "前端源码传送门")
 
