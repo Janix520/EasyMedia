@@ -5,6 +5,8 @@
 Springboot、netty实现的http-flv、websocket-flv流媒体服务（可用于直播点播），支持rtsp、h264、h265等、rtmp等多种源，h5纯js播放（不依赖flash），不需要依赖nginx等第三方，延迟大部分在1-5秒内（已经支持转复用，h264的流自动转封装，超低延迟。PS:当然还有种更低延迟的不用flv方案没时间写了，但是主要是flv比较大众，这个一般也够用了）。
 
 
+## 主更新地址 https://gitee.com/52jian/EasyMedia
+
 [成品下载](https://pan.baidu.com/s/17Spfa6-_R4bOsie4qcLM4w "成品下载")
 
 
