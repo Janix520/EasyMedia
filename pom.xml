@@ -51,7 +51,7 @@
 		<!-- <dependency>
 			<groupId>org.bytedeco</groupId>
 			<artifactId>javacv-platform</artifactId>
-			<version>1.5.4</version>
+			<version>3.0.8</version>
 		</dependency> -->
 
 		<!-- 媒体只用到以下两个 -->
@@ -71,7 +71,7 @@
 		<dependency>
 			<groupId>cn.hutool</groupId>
 			<artifactId>hutool-all</artifactId>
-			<version>5.3.3</version>
+			<version>5.8.21</version>
 		</dependency>
 
 		<dependency>
